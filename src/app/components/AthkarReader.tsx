@@ -45,17 +45,19 @@ export function AthkarReader() {
     setProgress({});
 
     try {
+      // تعديل الروابط لتصبح محلية
       const url = type === 'morning' 
-        ? 'https://ahegazy.github.io/muslimKit/json/azkar_sabah.json'
-        : 'https://ahegazy.github.io/muslimKit/json/azkar_massa.json';
+        ? '/api/morningthk.json'
+        : '/api/masaatk.json';
       
       const response = await fetch(url);
+      if (!response.ok) throw new Error('فشل تحميل الملف');
       const data = await response.json();
       
-      // Convert to array if it's an object or already an array
-      let athkarArray = Array.isArray(data) ? data : Object.values(data);
+      // الدخول لمفتاح content حسب هيكلية ملفك الجديد
+      let athkarArray = data.content || (Array.isArray(data) ? data : Object.values(data));
       
-      // Filter and clean the data
+      // تصفية وتنظيف البيانات
       athkarArray = athkarArray.filter((item: any) => {
         return item && 
                typeof item === 'object' && 
