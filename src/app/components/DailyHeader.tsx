@@ -175,7 +175,8 @@ export function DailyHeader({ userName }: DailyHeaderProps) {
       // Priority 2: Athkar (if no prayer)
       if (!current && currentMinutes >= 6 * 60 && currentMinutes < 12 * 60) {
         if (!morningAthkar || !JSON.parse(morningAthkar)) current = 'أذكار الصباح';
-      } else if (!current && currentMinutes >= 15 * 60 && currentMinutes < 18 * 60) {
+      } else if (!current && currentMinutes >= asrMinutes + 60 && currentMinutes < maghribMinutes) {
+        // Evening Athkar after Asr by 1 hour until Maghrib
         if (!eveningAthkar || !JSON.parse(eveningAthkar)) current = 'أذكار المساء';
       }
       
