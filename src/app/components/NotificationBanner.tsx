@@ -1,23 +1,62 @@
 import { useState, useEffect } from 'react';
 import { Bell, X } from 'lucide-react';
 
+interface PrayerTimes {
+  Asr: string;
+}
+
 export function NotificationBanner() {
   const [show, setShow] = useState(false);
   const [message, setMessage] = useState('');
+  const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
+
+  // Fetch prayer times
+  useEffect(() => {
+    const fetchPrayerTimes = async () => {
+      try {
+        const today = new Date();
+        const day = String(today.getDate()).padStart(2, '0');
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const year = today.getFullYear();
+        const dateString = `${day}-${month}-${year}`;
+
+        const url = `https://api.aladhan.com/v1/timings/${dateString}?latitude=31.9454&longitude=35.9284&method=4`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.data && data.data.timings) {
+          setPrayerTimes({ Asr: data.data.timings.Asr });
+        }
+      } catch (error) {
+        console.error('Error fetching prayer times:', error);
+        setPrayerTimes({ Asr: '15:45' }); // Fallback
+      }
+    };
+
+    fetchPrayerTimes();
+  }, []);
 
   useEffect(() => {
+    if (!prayerTimes) return;
+
     const checkNotifications = () => {
       const now = new Date();
       const hour = now.getHours();
       const minute = now.getMinutes();
+      const currentMinutes = hour * 60 + minute;
+
+      // Parse Asr time
+      const [asrHour, asrMinute] = prayerTimes.Asr.split(':').map(Number);
+      const asrMinutes = asrHour * 60 + asrMinute;
+      const eveningAthkarMinutes = asrMinutes + 60; // 1 hour after Asr
 
       // Morning Athkar reminder (6:00 AM - 6:05 AM)
       if (hour === 6 && minute < 5) {
         setMessage('⏰ حان وقت أذكار الصباح');
         setShow(true);
       }
-      // Evening Athkar reminder (5:00 PM - 5:05 PM)
-      else if (hour === 17 && minute < 5) {
+      // Evening Athkar reminder (1 hour after Asr - for 5 minutes)
+      else if (currentMinutes >= eveningAthkarMinutes && currentMinutes < eveningAthkarMinutes + 5) {
         setMessage('⏰ حان وقت أذكار المساء');
         setShow(true);
       }
@@ -40,7 +79,7 @@ export function NotificationBanner() {
     const interval = setInterval(checkNotifications, 60000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [prayerTimes]);
 
   if (!show) return null;
 
