@@ -83,13 +83,19 @@ export function QuranReader() {
     
     localStorage.setItem(storageKey, JSON.stringify(progressData));
     
+    // Update old storage format for timeline compatibility
+    const oldStorageKey = `quran-${username}-${today}`;
+    const existing = localStorage.getItem(oldStorageKey);
+    const data = existing ? JSON.parse(existing) : {};
+    
     if (completed) {
-      const oldStorageKey = `quran-${username}-${today}`;
-      const existing = localStorage.getItem(oldStorageKey);
-      const data = existing ? JSON.parse(existing) : {};
       data[surahKey] = true;
-      localStorage.setItem(oldStorageKey, JSON.stringify(data));
+    } else {
+      // If not completed (reset), remove from old format
+      data[surahKey] = false;
     }
+    
+    localStorage.setItem(oldStorageKey, JSON.stringify(data));
     
     window.dispatchEvent(new Event('storage'));
     loadProgress();
@@ -113,8 +119,12 @@ export function QuranReader() {
       if (surahKey === 'mulk' || surahKey === 'kahf') {
         const firstAyah = data.data.ayahs[0];
         if (firstAyah && firstAyah.text) {
-          // Remove the Bismillah from the beginning
-          firstAyah.text = firstAyah.text.replace(/^بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\s*/, '');
+          // Remove the Bismillah from the beginning - cover multiple variations
+          firstAyah.text = firstAyah.text
+            .replace(/^بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\s*/g, '')
+            .replace(/^بِسْمِ اللهِ الرَّحْمَنِ الرَّحِيمِ\s*/g, '')
+            .replace(/^بسم الله الرحمن الرحيم\s*/g, '')
+            .trim();
         }
       }
       
